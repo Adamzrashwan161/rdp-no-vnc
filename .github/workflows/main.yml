@@ -1,4 +1,4 @@
-name: Run VNC Serveo
+name: Run VNC Serveo Script
 
 on:
   workflow_dispatch:
@@ -7,11 +7,14 @@ jobs:
   start_vnc:
     runs-on: windows-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Run VNC Serveo PowerShell script
+      - name: List files in workflows folder
+        run: dir .github\workflows
+
+      - name: Run PowerShell script from workflows folder
         shell: pwsh
         run: |
           Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-          .\start-vnc-serveo-pnp.ps1
+          .\.github\workflows\start-vnc-serveo-pnp.ps1
