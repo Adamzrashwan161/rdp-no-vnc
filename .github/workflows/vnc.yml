@@ -44,4 +44,4 @@ jobs:
 
     - name: Start Pagekite tunnel
       run: |
-        python pagekite.py rdp123.1602studio.pagekite.me
+        python pagekite.py --clean --defaults ./pagekite.rc rdp123.1602studio.pagekite.me
