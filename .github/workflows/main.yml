@@ -37,4 +37,5 @@ jobs:
 
     - name: Start Pagekite Tunnel
       run: |
-        python pagekite.py 6080 1602studio.pagekite.me axxk92k6k6884797kbxzcea6z2aa376a
+        python pagekite.py 6080 axxk92k6k6884797kbxzcea6z2aa376a 1602studio.pagekite.me
+
