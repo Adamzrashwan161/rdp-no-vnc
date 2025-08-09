@@ -1,0 +1,36 @@
+name: Run VNC Tunnel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start_vnc:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Python packages
+      run: |
+        python -m pip install --upgrade pip
+        pip install websockify
+
+    - name: Install localtunnel
+      run: npm install -g localtunnel
+
+    - name: Run VNC tunnel
+      shell: pwsh
+      run: |
+        Start-Process -NoNewWindow -FilePath python -ArgumentList '-m websockify 6080 localhost:5900'
+        Start-Sleep -Seconds 5
+        lt --port 6080 --subdomain yoursubdomain
