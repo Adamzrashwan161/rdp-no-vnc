@@ -33,4 +33,4 @@ jobs:
       run: |
         Start-Process -NoNewWindow -FilePath python -ArgumentList '-m websockify 6080 localhost:5900'
         Start-Sleep -Seconds 5
-        lt --port 6080 --subdomain yoursubdomain
+        lt --port 6080 --subdomain Adamzrashwan_161
