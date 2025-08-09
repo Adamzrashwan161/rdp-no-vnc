@@ -1,9 +1,9 @@
-# Helper: Check if command exists
+# Check if command exists
 function Command-Exists($cmd) {
     $null -ne (Get-Command $cmd -ErrorAction SilentlyContinue)
 }
 
-# Install Chocolatey if not present (for Python)
+# Install Chocolatey if missing
 if (-not (Command-Exists choco)) {
     Write-Host "Installing Chocolatey..."
     Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -28,7 +28,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "websockify already installed."
 }
 
-# TightVNC install path & URL
+# TightVNC install path and installer URL
 $tightvncPath = "C:\Program Files\TightVNC\tvnserver.exe"
 $tightvncInstallerUrl = "https://www.tightvnc.com/download/2.8.81/tightvnc-2.8.81-gpl-setup-64bit.msi"
 $tightvncInstallerPath = "$env:TEMP\tightvnc.msi"
@@ -43,14 +43,14 @@ if (-not (Test-Path $tightvncPath)) {
     Write-Host "TightVNC already installed."
 }
 
-# Set TightVNC password & config in registry
+# Set TightVNC password and config in registry
 $regPath = "HKCU:\Software\TightVNC\Server"
 If (-not (Test-Path $regPath)) {
-    Write-Host "TightVNC registry keys not found. Run TightVNC once manually and rerun script."
+    Write-Host "TightVNC registry keys not found. Please run TightVNC once manually and rerun this script."
     exit
 }
 Write-Host "Setting TightVNC password and config..."
-Set-ItemProperty -Path $regPath -Name "Password" -Value ([byte[]](0x31,0x32,0x33,0x34,0x35,0x36,0x00))
+Set-ItemProperty -Path $regPath -Name "Password" -Value ([byte[]](0x31,0x32,0x33,0x34,0x35,0x36,0x00))  # "123456"
 Set-ItemProperty -Path $regPath -Name "AlwaysShared" -Value 1
 
 # Start TightVNC server if not running
@@ -62,12 +62,12 @@ if (-not (Get-Process -Name tvnserver -ErrorAction SilentlyContinue)) {
     Write-Host "TightVNC server already running."
 }
 
-# Start noVNC (websockify) server on port 6080 forwarding to localhost:5900
+# Start noVNC (websockify) on port 6080 forwarding to localhost:5900
 Write-Host "Starting noVNC server (websockify)..."
 Start-Process -NoNewWindow -FilePath python -ArgumentList '-m websockify 6080 localhost:5900'
 
 Start-Sleep -Seconds 5
 
-# Start Serveo SSH tunnel exposing port 6080 on subdomain 'myrdp'
-Write-Host "Starting Serveo tunnel (Ctrl+C to stop)..."
+# Start Serveo SSH tunnel with subdomain myrdp
+Write-Host "Starting Serveo SSH tunnel (Ctrl+C to stop)..."
 ssh -R myrdp:80:localhost:6080 serveo.net
