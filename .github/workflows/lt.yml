@@ -28,11 +28,11 @@ jobs:
         npm install -g localtunnel
 
     - name: Start websockify and localtunnel
-      shell: pwsh
-      run: |
-        # Start websockify in background forwarding port 6080 to 5900
-        Start-Process -NoNewWindow -FilePath python -ArgumentList "-m websockify 6080 localhost:5900" -WindowStyle Hidden
-        Start-Sleep -Seconds 5
-        
-        # Start localtunnel exposing port 6080 on subdomain 'myvnc123' (change if needed)
-        npx localtunnel --port 6080 --subdomain myvnc123
+  shell: pwsh
+  run: |
+    # Start websockify in background forwarding port 6080 to 5900
+    Start-Process -FilePath python -ArgumentList "-m websockify 6080 localhost:5900" -WindowStyle Hidden
+    Start-Sleep -Seconds 5
+    
+    # Start localtunnel exposing port 6080 on subdomain 'myvnc123' (change if needed)
+    npx localtunnel --port 6080 --subdomain myvnc123
