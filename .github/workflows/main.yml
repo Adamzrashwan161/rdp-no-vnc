@@ -1,0 +1,45 @@
+name: Free Windows with noVNC via Pagekite
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Enable RDP (optional)
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        net user runneradmin YourPassword123!
+
+    - name: Download TightVNC
+      run: |
+        Invoke-WebRequest -Uri "https://www.tightvnc.com/download/2.8.81/tightvnc-2.8.81-gpl-setup-64bit.msi" -OutFile "tightvnc.msi"
+        Start-Process msiexec.exe -ArgumentList '/i tightvnc.msi /quiet' -Wait
+        & "C:\Program Files\TightVNC\tvnserver.exe" -install
+        & "C:\Program Files\TightVNC\tvnserver.exe" -start
+
+    - name: Download noVNC
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/novnc/noVNC/archive/refs/heads/master.zip" -OutFile "novnc.zip"
+        Expand-Archive novnc.zip -DestinationPath .
+        Rename-Item noVNC-master novnc
+
+    - name: Start noVNC WebSocket
+      run: |
+        cd novnc
+        python -m pip install --upgrade pip
+        python -m pip install websockify
+        Start-Process -NoNewWindow -FilePath "python" -ArgumentList "utils/websockify/run 6080 localhost:5900"
+
+    - name: Download Pagekite
+      run: |
+        Invoke-WebRequest https://pagekite.net/pk/pagekite.py -OutFile pagekite.py
+        python pagekite.py 6080 1602studio.pagekite.me axxk92k6k6884797kbxzcea6z2aa376a
+
+
+    - name: Start Pagekite Tunnel
+      run: |
+        python pagekite.py 6080 yourname.pagekite.me
