@@ -1,49 +1,73 @@
+# Helper: Check if command exists
+function Command-Exists($cmd) {
+    $null -ne (Get-Command $cmd -ErrorAction SilentlyContinue)
+}
 
-name: Windows noVNC with Pagekite
+# Install Chocolatey if not present (for Python)
+if (-not (Command-Exists choco)) {
+    Write-Host "Installing Chocolatey..."
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+}
 
-on:
-  workflow_dispatch:
+# Install Python if missing
+if (-not (Command-Exists python)) {
+    Write-Host "Installing Python..."
+    choco install python --pre -y
+} else {
+    Write-Host "Python already installed."
+}
 
-jobs:
-  build:
-    runs-on: windows-latest
-    env:
-      PAGEKITE_RC: ${{ github.workspace }}\pagekite.rc
-    steps:
-    - name: Install Python and websockify
-      run: |
-        choco install python --pre -y
-        python -m pip install --upgrade pip
-        python -m pip install websockify
+# Upgrade pip and install websockify if missing
+Write-Host "Installing/Upgrading websockify..."
+python -m pip install --upgrade pip
+python -m pip show websockify > $null 2>&1
+if ($LASTEXITCODE -ne 0) {
+    python -m pip install websockify
+} else {
+    Write-Host "websockify already installed."
+}
 
-    - name: Download noVNC
-      run: |
-        Invoke-WebRequest https://github.com/novnc/noVNC/archive/refs/heads/master.zip -OutFile novnc.zip
-        Expand-Archive novnc.zip -DestinationPath .
-        Move-Item noVNC-master noVNC
+# TightVNC install path & URL
+$tightvncPath = "C:\Program Files\TightVNC\tvnserver.exe"
+$tightvncInstallerUrl = "https://www.tightvnc.com/download/2.8.81/tightvnc-2.8.81-gpl-setup-64bit.msi"
+$tightvncInstallerPath = "$env:TEMP\tightvnc.msi"
 
-    - name: Install TightVNC
-      run: |
-        Invoke-WebRequest https://www.tightvnc.com/download/2.8.81/tightvnc-2.8.81-gpl-setup-64bit.msi -OutFile tvnc.msi
-        msiexec /i tvnc.msi /quiet
-        reg add "HKCU\Software\TightVNC\Server" /v Password /t REG_BINARY /d 31323334353600 /f
-        reg add "HKCU\Software\TightVNC\Server" /v AlwaysShared /t REG_DWORD /d 1 /f
+# Download and install TightVNC if missing
+if (-not (Test-Path $tightvncPath)) {
+    Write-Host "Downloading TightVNC installer..."
+    Invoke-WebRequest -Uri $tightvncInstallerUrl -OutFile $tightvncInstallerPath
+    Write-Host "Installing TightVNC silently..."
+    Start-Process msiexec.exe -ArgumentList "/i `"$tightvncInstallerPath`" /quiet" -Wait
+} else {
+    Write-Host "TightVNC already installed."
+}
 
-    - name: Download Pagekite
-      run: |
-        Invoke-WebRequest https://pagekite.net/pk/pagekite.py -OutFile pagekite.py
+# Set TightVNC password & config in registry
+$regPath = "HKCU:\Software\TightVNC\Server"
+If (-not (Test-Path $regPath)) {
+    Write-Host "TightVNC registry keys not found. Run TightVNC once manually and rerun script."
+    exit
+}
+Write-Host "Setting TightVNC password and config..."
+Set-ItemProperty -Path $regPath -Name "Password" -Value ([byte[]](0x31,0x32,0x33,0x34,0x35,0x36,0x00))
+Set-ItemProperty -Path $regPath -Name "AlwaysShared" -Value 1
 
-    - name: Create Pagekite config
-      run: |
-        echo kitename = rdp123.1602studio.pagekite.me > pagekite.rc
-        echo kitesecret = Adamzrashwan_161 >> pagekite.rc
-        echo service_on = http:6080:localhost:6080 >> pagekite.rc
+# Start TightVNC server if not running
+if (-not (Get-Process -Name tvnserver -ErrorAction SilentlyContinue)) {
+    Write-Host "Starting TightVNC server..."
+    Start-Process -FilePath $tightvncPath
+    Start-Sleep -Seconds 5
+} else {
+    Write-Host "TightVNC server already running."
+}
 
-    - name: Start noVNC server
-      run: |
-        Start-Process python -ArgumentList "-m websockify 6080 localhost:5900" -NoNewWindow
-        Start-Sleep -Seconds 5
+# Start noVNC (websockify) server on port 6080 forwarding to localhost:5900
+Write-Host "Starting noVNC server (websockify)..."
+Start-Process -NoNewWindow -FilePath python -ArgumentList '-m websockify 6080 localhost:5900'
 
-    - name: Start Pagekite tunnel
-      run: |
-        python pagekite.py --clean rdp123.1602studio.pagekite.me
+Start-Sleep -Seconds 5
+
+# Start Serveo SSH tunnel exposing port 6080 on subdomain 'myrdp'
+Write-Host "Starting Serveo tunnel (Ctrl+C to stop)..."
+ssh -R myrdp:80:localhost:6080 serveo.net
