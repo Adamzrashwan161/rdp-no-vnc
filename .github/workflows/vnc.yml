@@ -1,3 +1,4 @@
+
 name: Windows noVNC with Pagekite
 
 on:
@@ -7,12 +8,17 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - name: Download noVNC & websockify
+    - name: Install Python and websockify
+      run: |
+        choco install python --pre -y
+        python -m pip install --upgrade pip
+        python -m pip install websockify
+
+    - name: Download noVNC
       run: |
         Invoke-WebRequest https://github.com/novnc/noVNC/archive/refs/heads/master.zip -OutFile novnc.zip
         Expand-Archive novnc.zip -DestinationPath .
-        Invoke-WebRequest https://github.com/novnc/websockify/archive/refs/heads/master.zip -OutFile ws.zip
-        Expand-Archive ws.zip -DestinationPath .
+        Move-Item noVNC-master noVNC
 
     - name: Install TightVNC
       run: |
@@ -20,11 +26,6 @@ jobs:
         msiexec /i tvnc.msi /quiet
         reg add "HKCU\Software\TightVNC\Server" /v Password /t REG_BINARY /d 31323334353600 /f
         reg add "HKCU\Software\TightVNC\Server" /v AlwaysShared /t REG_DWORD /d 1 /f
-
-    - name: Install Python
-      run: |
-        choco install python --pre -y
-        python -m pip install --upgrade pip
 
     - name: Download Pagekite
       run: |
@@ -36,12 +37,12 @@ jobs:
         echo kitesecret = Adamzrashwan_161 >> pagekite.rc
         echo service_on = http:6080:localhost:6080 >> pagekite.rc
 
-    - name: Start noVNC server
+    - name: Start noVNC
       run: |
-        Start-Process python -ArgumentList "websockify-master\websockify 6080 localhost:5900" -NoNewWindow
+        Start-Process python -ArgumentList "-m websockify 6080 localhost:5900" -NoNewWindow
         Start-Sleep -Seconds 5
 
     - name: Start Pagekite tunnel
       run: |
-        $env:PAGEKITE_RC = "$(Get-Location)\pagekite.rc"
+        set PAGEKITE_RC=%CD%\pagekite.rc
         python pagekite.py --clean rdp123.1602studio.pagekite.me
