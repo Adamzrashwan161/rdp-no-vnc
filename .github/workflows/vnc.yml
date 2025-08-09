@@ -18,7 +18,6 @@ jobs:
       run: |
         Invoke-WebRequest https://www.tightvnc.com/download/2.8.81/tightvnc-2.8.81-gpl-setup-64bit.msi -OutFile tvnc.msi
         msiexec /i tvnc.msi /quiet
-        # Set VNC password: 123456
         reg add "HKCU\Software\TightVNC\Server" /v Password /t REG_BINARY /d 31323334353600 /f
         reg add "HKCU\Software\TightVNC\Server" /v AlwaysShared /t REG_DWORD /d 1 /f
 
@@ -44,4 +43,5 @@ jobs:
 
     - name: Start Pagekite tunnel
       run: |
-        python pagekite.py --clean --defaults ./pagekite.rc rdp123.1602studio.pagekite.me
+        $env:PAGEKITE_RC = "$(Get-Location)\pagekite.rc"
+        python pagekite.py --clean rdp123.1602studio.pagekite.me
