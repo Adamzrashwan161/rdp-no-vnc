@@ -1,0 +1,38 @@
+name: start_vnc_localtunnel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  vnc_tunnel:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Install Python and Node.js
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install websockify and localtunnel
+      run: |
+        python -m pip install --upgrade pip
+        pip install websockify
+        npm install -g localtunnel
+
+    - name: Start websockify and localtunnel
+      shell: pwsh
+      run: |
+        # Start websockify in background forwarding port 6080 to 5900
+        Start-Process -NoNewWindow -FilePath python -ArgumentList "-m websockify 6080 localhost:5900" -WindowStyle Hidden
+        Start-Sleep -Seconds 5
+        
+        # Start localtunnel exposing port 6080 on subdomain 'myvnc123' (change if needed)
+        npx localtunnel --port 6080 --subdomain myvnc123
