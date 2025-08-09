@@ -17,8 +17,8 @@ jobs:
         # Download and install TightVNC
         Invoke-WebRequest https://www.tightvnc.com/download/2.8.81/tightvnc-2.8.81-gpl-setup-64bit.msi -OutFile tvnc.msi
         msiexec /i tvnc.msi /quiet
-        # Set VNC password
-        reg add "HKCU\Software\TightVNC\Server" /v Password /t REG_BINARY /d 2131313132332121 /f
+        # Set VNC password: "123456"
+        reg add "HKCU\Software\TightVNC\Server" /v Password /t REG_BINARY /d 31323334353600 /f
         reg add "HKCU\Software\TightVNC\Server" /v AlwaysShared /t REG_DWORD /d 1 /f
 
     - name: Install Python for Pagekite
@@ -30,9 +30,16 @@ jobs:
       run: |
         Invoke-WebRequest https://pagekite.net/pk/pagekite.py -OutFile pagekite.py
 
+    - name: Create Pagekite config
+      run: |
+        echo kitename = rdp123.1602studio.pagekite.me > pagekite.rc
+        echo kitesecret = Adamzrashwan_161 >> pagekite.rc
+        echo ports = 6080 >> pagekite.rc
+        echo service_on = http:6080:localhost:6080 >> pagekite.rc
+
     - name: Start noVNC
       run: |
-        Start-Process python -ArgumentList "..\websockify-master\websockify 6080 localhost:5900" -NoNewWindow
+        Start-Process python -ArgumentList "websockify-master\websockify 6080 localhost:5900" -NoNewWindow
         Start-Sleep -Seconds 5
 
     - name: Start Pagekite Tunnel
