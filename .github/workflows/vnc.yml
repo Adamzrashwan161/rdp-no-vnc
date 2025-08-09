@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      PAGEKITE_RC: ${{ github.workspace }}\pagekite.rc
     steps:
     - name: Install Python and websockify
       run: |
@@ -37,12 +39,11 @@ jobs:
         echo kitesecret = Adamzrashwan_161 >> pagekite.rc
         echo service_on = http:6080:localhost:6080 >> pagekite.rc
 
-    - name: Start noVNC
+    - name: Start noVNC server
       run: |
         Start-Process python -ArgumentList "-m websockify 6080 localhost:5900" -NoNewWindow
         Start-Sleep -Seconds 5
 
     - name: Start Pagekite tunnel
       run: |
-        set PAGEKITE_RC=%CD%\pagekite.rc
         python pagekite.py --clean rdp123.1602studio.pagekite.me
